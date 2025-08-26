@@ -8,11 +8,11 @@ def run(playwright):
     # Capture console messages
     page.on("console", lambda msg: print(f"Browser console: {msg.text}"))
 
-    page.goto("http://localhost:5173/")
+    page.goto("http://localhost:5175/")
 
-    # Wait for the loading indicator to disappear
+    # Wait for the model to load by checking for the success message in the button
     print("Waiting for model to load...")
-    expect(page.locator('div:has-text("Loading model...")')).to_be_hidden(timeout=240000)
+    expect(page.locator('button:has-text("Generate Template")')).to_be_enabled(timeout=240000)
     print("Model loaded!")
 
     # Take a screenshot to verify the initial state

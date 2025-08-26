@@ -21,7 +21,7 @@ function App() {
     const initializeGenerator = async () => {
       setLoadingMessage('Loading model pipeline...')
       try {
-        generator.current = await pipeline('text-generation', 'Xenova/tiny_starcoder_py', {
+        generator.current = await pipeline('text2text-generation', 'google-t5/t5-small', {
           progress_callback: (progress) => {
             const message = `Loading model: ${progress.file} (${Math.round(progress.progress)}%)`
             setLoadingMessage(message)
