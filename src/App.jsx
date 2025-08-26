@@ -25,7 +25,7 @@ function App() {
     const initializeGenerator = async () => {
       setLoadingMessage('Loading model pipeline...')
       try {
-        generator.current = await pipeline('text-classification', 'Xenova/distilbert-base-uncased-finetuned-sst-2-english', {
+        generator.current = await pipeline('text2text-generation', 't5-small', {
           progress_callback: (progress) => {
             const message = `Loading model: ${progress.file} (${Math.round(progress.progress)}%)`
             setLoadingMessage(message)
@@ -52,11 +52,43 @@ function App() {
     if (!prompt.trim() || !generator.current) return
     
     setIsGenerating(true)
+    setGeneratedHTML('')
+    setGeneratedJSON('')
+
+    const fullPrompt = `
+You are an expert in creating HTML templates for live video production.
+Generate a complete, single HTML file based on the following prompt.
+The HTML should include inline CSS for styling and JavaScript for any animations if necessary.
+Do not include any explanations, just the raw HTML code.
+The HTML code must start with <!DOCTYPE html>.
+
+Prompt: "${prompt}"
+`
     
     try {
-      const output = await generator.current(prompt)
-      console.log(output)
-      setGeneratedHTML(JSON.stringify(output, null, 2))
+      const output = await generator.current(fullPrompt, {
+        max_new_tokens: 1024,
+        temperature: 0.7,
+        top_k: 50,
+        repetition_penalty: 1.2,
+        no_repeat_ngram_size: 2,
+      })
+
+      let generatedText = output[0].generated_text
+      const htmlStartIndex = generatedText.indexOf('<!DOCTYPE html>')
+
+      if (htmlStartIndex !== -1) {
+        generatedText = generatedText.substring(htmlStartIndex)
+      }
+
+      const sampleJSON = `{
+  "description": "Generated template based on user prompt",
+  "prompt": "${prompt}",
+  "DataFields": []
+}`
+
+      setGeneratedHTML(generatedText)
+      setGeneratedJSON(sampleJSON)
     } catch (error) {
       console.error("Failed to generate template:", error)
       setGeneratedHTML("<p>Error generating template. Please try again.</p>")
