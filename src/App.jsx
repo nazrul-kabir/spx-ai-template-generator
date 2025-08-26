@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { pipeline } from '@xenova/transformers'
+import { pipeline } from '@huggingface/transformers'
 import { Button } from '@/components/ui/button.jsx'
 import { Textarea } from '@/components/ui/textarea.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
@@ -21,7 +21,7 @@ function App() {
     const initializeGenerator = async () => {
       setLoadingMessage('Loading model pipeline...')
       try {
-        generator.current = await pipeline('text-generation', 'Xenova/gpt2', {
+        generator.current = await pipeline('text-generation', 'Xenova/tiny_starcoder_py', {
           progress_callback: (progress) => {
             const message = `Loading model: ${progress.file} (${Math.round(progress.progress)}%)`
             setLoadingMessage(message)
@@ -150,7 +150,6 @@ Prompt: "${prompt}"
                 <CardTitle className="text-spx-white">Describe Your Template</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Textarea
                 <Textarea
                   placeholder={isModelLoading ? loadingMessage : "Describe the SPX template you want to generate..."}
                   value={prompt}

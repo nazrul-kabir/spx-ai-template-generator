@@ -12,11 +12,9 @@ export default defineConfig({
     },
   },
   server: {
-    proxy: {
-      '/Xenova': {
-        target: 'https://huggingface.co',
-        changeOrigin: true,
-      },
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
     },
   },
 })
