@@ -46,23 +46,19 @@ self.addEventListener("message", async (event) => {
     self.postMessage(x);
   });
 
+  let streamed = false;
   const streamer = new TextStreamer(generator.tokenizer, {
     skip_prompt: true,
     callback_function: (x) => {
-      console.log(x);
+      streamed = true;
       self.postMessage({
         status: "update",
         output: x,
       });
     },
   });
-  // self.postMessage({
-  //     status: 'update',
-  //     output: generator.tokenizer.decode(x[0].output_token_ids, { skip_special_tokens: true })
-  // });
 
   // Actually perform the code-completion
-  console.log(text);
   const output = await generator(text, {
     max_new_tokens,
     temperature,
@@ -74,7 +70,6 @@ self.addEventListener("message", async (event) => {
   // Send the output back to the main thread
   self.postMessage({
     status: "complete",
-    output: output,
+    output: streamed ? null : output,
   });
-  console.log(output);
 });
