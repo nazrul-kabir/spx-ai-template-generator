@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { pipeline } from '@xenova/transformers'
 import { Button } from '@/components/ui/button.jsx'
 import { Textarea } from '@/components/ui/textarea.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx'
@@ -11,6 +12,31 @@ function App() {
   const [generatedHTML, setGeneratedHTML] = useState('')
   const [generatedJSON, setGeneratedJSON] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isModelLoading, setIsModelLoading] = useState(true)
+  const [loadingMessage, setLoadingMessage] = useState('Initializing model...')
+
+  const generator = useRef(null)
+
+  useEffect(() => {
+    const initializeGenerator = async () => {
+      setLoadingMessage('Loading model pipeline...')
+      try {
+        generator.current = await pipeline('text-generation', 'Xenova/gpt2', {
+          progress_callback: (progress) => {
+            const message = `Loading model: ${progress.file} (${Math.round(progress.progress)}%)`
+            setLoadingMessage(message)
+          },
+        })
+        setLoadingMessage('Model loaded successfully!')
+      } catch (error) {
+        console.error("Failed to load model:", error)
+        setLoadingMessage('Error loading model. Please refresh.')
+      } finally {
+        setTimeout(() => setIsModelLoading(false), 2000) // Give time for user to read success message
+      }
+    }
+    initializeGenerator()
+  }, [])
 
   const examplePrompts = [
     "Create a lower third template with animated text for news broadcasts",
@@ -20,73 +46,52 @@ function App() {
   ]
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return
+    if (!prompt.trim() || !generator.current) return
     
     setIsGenerating(true)
+    setGeneratedHTML('')
+    setGeneratedJSON('')
+
+    const fullPrompt = `
+You are an expert in creating HTML templates for live video production.
+Generate a complete, single HTML file based on the following prompt.
+The HTML should include inline CSS for styling and JavaScript for any animations if necessary.
+Do not include any explanations, just the raw HTML code.
+The HTML code must start with <!DOCTYPE html>.
+
+Prompt: "${prompt}"
+`
     
-    // Placeholder for AI generation logic
-    setTimeout(() => {
-      const sampleHTML = `<!DOCTYPE html>
-<html>
-<head>
-    <title>SPX Template</title>
-    <style>
-        body { 
-            margin: 0; 
-            padding: 20px; 
-            font-family: Arial, sans-serif; 
-            background: linear-gradient(45deg, #295aaf, #2a3641);
-            color: white;
-        }
-        .template-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .content {
-            text-align: center;
-            animation: fadeIn 1s ease-in;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
-</head>
-<body>
-    <div class="template-container">
-        <div class="content">
-            <h1>Generated Template</h1>
-            <p>Based on: ${prompt}</p>
-        </div>
-    </div>
-</body>
-</html>`
+    try {
+      const output = await generator.current(fullPrompt, {
+        max_new_tokens: 1024,
+        temperature: 0.7,
+        top_k: 50,
+        repetition_penalty: 1.2,
+        no_repeat_ngram_size: 2,
+      })
+
+      let generatedText = output[0].generated_text
+      const htmlStartIndex = generatedText.indexOf('<!DOCTYPE html>')
+
+      if (htmlStartIndex !== -1) {
+        generatedText = generatedText.substring(htmlStartIndex)
+      }
 
       const sampleJSON = `{
   "description": "Generated template based on user prompt",
   "prompt": "${prompt}",
-  "DataFields": [
-    {
-      "field": "title",
-      "ftype": "textfield",
-      "title": "Title Text",
-      "value": "Generated Template"
-    },
-    {
-      "field": "subtitle", 
-      "ftype": "textfield",
-      "title": "Subtitle Text",
-      "value": "Based on: ${prompt}"
-    }
-  ]
+  "DataFields": []
 }`
 
-      setGeneratedHTML(sampleHTML)
+      setGeneratedHTML(generatedText)
       setGeneratedJSON(sampleJSON)
+    } catch (error) {
+      console.error("Failed to generate template:", error)
+      setGeneratedHTML("<p>Error generating template. Please try again.</p>")
+    } finally {
       setIsGenerating(false)
-    }, 2000)
+    }
   }
 
   const handleExampleClick = (example) => {
@@ -146,17 +151,19 @@ function App() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <Textarea
-                  placeholder="Describe the SPX template you want to generate..."
+                <Textarea
+                  placeholder={isModelLoading ? loadingMessage : "Describe the SPX template you want to generate..."}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   className="min-h-32 bg-spx-blue-darkest/50 border-spx-gray-dark text-spx-white placeholder:text-spx-gray-light"
+                  disabled={isModelLoading || isGenerating}
                 />
                 <Button 
                   onClick={handleGenerate}
-                  disabled={!prompt.trim() || isGenerating}
+                  disabled={!prompt.trim() || isGenerating || isModelLoading}
                   className="w-full bg-spx-blue hover:bg-spx-blue/80 text-spx-white"
                 >
-                  {isGenerating ? 'Generating...' : 'Generate Template'}
+                  {isModelLoading ? loadingMessage : isGenerating ? 'Generating...' : 'Generate Template'}
                 </Button>
               </CardContent>
             </Card>
@@ -174,6 +181,7 @@ function App() {
                       variant="outline"
                       onClick={() => handleExampleClick(example)}
                       className="text-left h-auto p-3 bg-spx-blue-darkest/30 border-spx-gray-dark text-spx-gray-light hover:bg-spx-blue-darkest/50 hover:text-spx-white"
+                      disabled={isModelLoading || isGenerating}
                     >
                       {example}
                     </Button>
