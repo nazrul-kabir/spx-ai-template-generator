@@ -79,6 +79,14 @@ function App() {
           // Generation update: update the output text.
           setCode((prev) => prev + e.data.output);
           break;
+
+        case "complete":
+          // Generation complete: re-enable the "Generate" button
+          if (e.data.output) {
+            const out = e.data.output[0].generated_text;
+            setCode(out);
+          }
+          break;
       }
     };
 
