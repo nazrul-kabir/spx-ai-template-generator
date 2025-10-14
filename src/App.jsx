@@ -3,10 +3,9 @@ import { createTemplate } from './base-template';
 import Progress from './components/Progress';
 
 const examplePrompts = [
-  "Create a lower third template with animated text for news broadcasts",
-  "Design a sports scoreboard template with team logos and score display",
-  "Make a weather forecast template with animated icons and temperature",
-  "Build a breaking news banner with scrolling text and urgent styling"
+  "Create a simple red box in the top left.",
+  "Make a blue circle in the center of the screen.",
+  "Design a lower-third bar with a semi-transparent black background."
 ];
 
 function App() {
@@ -49,7 +48,7 @@ function App() {
           setActiveTab('preview');
           break;
         case 'error':
-            alert('An error occurred during template generation. The in-browser AI model may not be powerful enough for this task.');
+            alert('An error occurred during template generation.');
             setIsGenerating(false);
             break;
       }
@@ -62,7 +61,7 @@ function App() {
   const handleGenerate = () => {
     if (!prompt || isGenerating) return;
     setIsGenerating(true);
-    setGeneratedTemplate('<!-- Generating, please wait... This may take several minutes. -->');
+    setGeneratedTemplate('<!-- Generating, please wait... -->');
     worker.current.postMessage({
         type: 'generate',
         prompt: prompt,
@@ -101,18 +100,18 @@ function App() {
       <div className="flex flex-1">
         <div className="w-1/3 p-6 flex flex-col border-r border-gray-700">
           <h1 className="text-3xl font-bold text-blue-400">SPX AI Template Generator</h1>
-          <p className="mt-2 text-gray-400">Describe the SPX-GC template you want to create. Be as descriptive as possible.</p>
+          <p className="mt-2 text-gray-400">Describe the visual element you want to create.</p>
 
           <textarea
             className="w-full h-1/2 mt-4 p-3 bg-gray-800 border border-gray-600 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., 'A lower-third with a person's name and title...'"
+            placeholder="e.g., 'A simple red box in the top left.'"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
           />
 
           <div className="mt-4">
             <p className="text-gray-400">Or try an example:</p>
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-1 gap-2 mt-2">
               {examplePrompts.map((p, i) => (
                 <button key={i} onClick={() => setPrompt(p)} className="p-2 bg-gray-700 hover:bg-gray-600 rounded-md text-left text-sm">
                   {p}
